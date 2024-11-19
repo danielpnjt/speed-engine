@@ -4,9 +4,6 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:
-  tags:
-    - '*'
 
 jobs:
   # Job for building and pushing Docker image
