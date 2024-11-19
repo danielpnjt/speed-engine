@@ -14,6 +14,6 @@ ENV ZONEINFO=/zoneinfo.zip
 
 COPY --from=build /app/bin/app /app
 
-EXPOSE 3022
+EXPOSE 3021
 ENTRYPOINT ["/app"]
 
