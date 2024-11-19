@@ -46,7 +46,7 @@ jobs:
       # Authenticate with GCP
       - name: Authenticate Docker with GCP
         run: |
-          echo ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+          echo "${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}" | docker login -u _json_key --password-stdin https://gcr.io
 
       # Pull Docker image from Docker Hub
       - name: Pull Docker image
