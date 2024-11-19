@@ -1,0 +1,9 @@
+version: '3.8'
+
+services:
+  speed-engine:
+    build:
+      context: ./speed-engine
+      dockerfile: Dockerfile
+    ports:
+      - "3025:3030"
