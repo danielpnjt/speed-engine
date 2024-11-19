@@ -45,13 +45,13 @@ jobs:
     steps:
     - name: Set up SSH
       run: |
+        sudo apt-get update && sudo apt-get install -y openssh-client
         mkdir -p ~/.ssh
         chmod 700 ~/.ssh
-        echo "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' | sed 's/\\n/\n/g' > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
         eval "$(ssh-agent -s)"
-        ssh-add ~/.ssh/id_rsa
+        echo "${{ secrets.SSH_PRIVATE_KEY_PROD }}" | tr -d '\r' | ssh-add -
         ssh-keyscan -H ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts
+        chmod 644 ~/.ssh/known_hosts
 
     - name: Pull Docker Image
       run: ssh ${{ secrets.USER_PROD }}@${{ secrets.VM_PROD }} "docker pull ghcr.io/danielpnjt/speed-engine:latest"
