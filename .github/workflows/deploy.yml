@@ -47,21 +47,15 @@ jobs:
         run: |
           gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
 
-      # Authenticate Docker with GCP
-      - name: Authenticate Docker with GCP
+      # Connect to existing GCP instance and deploy container
+      - name: Deploy Docker container to existing instance
         run: |
-          gcloud auth configure-docker gcr.io
-
-      # Pull Docker image from Docker Hub
-      - name: Pull Docker image
-        run: |
-          docker pull ${{ secrets.DOCKER_USERNAME }}/my-app:latest
-
-      # Deploy Docker image on GCP
-      - name: Deploy Docker container
-        run: |
-          gcloud compute instances create-with-container instance-20241028-104014 \
-            --zone us-central1-c \
-            --container-image ${{ secrets.DOCKER_USERNAME }}/my-app:latest \
-            --tags=http-server,https-server \
-            --container-restart-policy always
+          gcloud compute ssh instance-20241028-104014 --zone us-central1-c --command "
+            sudo apt update &&
+            sudo apt install -y docker.io &&
+            echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin &&
+            docker pull ${{ secrets.DOCKER_USERNAME }}/my-app:latest &&
+            docker stop my-app-container || true &&
+            docker rm my-app-container || true &&
+            docker run -d --restart always --name my-app-container -p 3021:3021 ${{ secrets.DOCKER_USERNAME }}/my-app:latest
+          "
