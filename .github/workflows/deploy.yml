@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: Build and Deploy
 
 on:
   push:
@@ -6,58 +6,57 @@ on:
       - main
 
 jobs:
-  # Job for building and pushing Docker image
   build:
-    name: Build and Push Docker Image
     runs-on: ubuntu-latest
 
     steps:
-    # Checkout repository
-    - name: Checkout Repository
-      uses: actions/checkout@v3
+      # Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    # Set up ENV
-    - name: Create .env file
-      run: chmod +x ./deployment/production/env.sh
+      # Log in to Docker Hub
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-    # Set up Docker
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
+      # Build Docker image
+      - name: Build Docker image
+        run: |
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/my-app:latest .
 
-    - name: Log in to GitHub Container Registry
-      run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+      # Push Docker image to Docker Hub
+      - name: Push Docker image
+        run: |
+          docker push ${{ secrets.DOCKER_USERNAME }}/my-app:latest
 
-    # Run your build and push
-    - name: Build and Push Docker Image
-      run: |
-        docker build --pull -t ghcr.io/danielpnjt/speed-engine:latest .
-        docker push ghcr.io/danielpnjt/speed-engine:latest
-
-    - name: Log out from Docker
-      run: docker logout ghcr.io
-
-  # Job for deployment
   deploy:
-    name: Deploy to Production
-    runs-on: ubuntu-latest
     needs: build
-    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+
     steps:
-    - name: Set up SSH
-      run: |
-        sudo apt-get update && sudo apt-get install -y openssh-client
-        mkdir -p ~/.ssh
-        chmod 700 ~/.ssh
-        eval "$(ssh-agent -s)"
-        echo "${{ secrets.SSH_PRIVATE_KEY_PROD }}" | tr -d '\r' | ssh-add -
-        ssh-keyscan -H ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts
-        chmod 644 ~/.ssh/known_hosts
+      # Connect to GCP
+      - name: Set up Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          service_account_key: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
 
-    - name: Pull Docker Image
-      run: ssh ${{ secrets.USER_PROD }}@${{ secrets.VM_PROD }} "docker pull ghcr.io/danielpnjt/speed-engine:latest"
+      # Authenticate with GCP
+      - name: Authenticate Docker with GCP
+        run: |
+          echo ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }} | docker login -u _json_key --password-stdin https://gcr.io
 
-    - name: Stop and Remove Old Container
-      run: ssh ${{ secrets.USER_PROD }}@${{ secrets.VM_PROD }} "docker stop speed-engine || true && docker rm speed-engine || true"
+      # Pull Docker image from Docker Hub
+      - name: Pull Docker image
+        run: |
+          docker pull ${{ secrets.DOCKER_USERNAME }}/my-app:latest
 
-    - name: Start New Container
-      run: ssh ${{ secrets.USER_PROD }}@${{ secrets.VM_PROD }} "docker run -p 3021:3021 -d --name speed-engine ghcr.io/danielpnjt/speed-engine:latest"
+      # Deploy Docker image on GCP
+      - name: Deploy Docker container
+        run: |
+          gcloud compute instances create-with-container my-container-instance \
+            --zone us-central1-a \
+            --container-image ${{ secrets.DOCKER_USERNAME }}/my-app:latest \
+            --tags=http-server,https-server
