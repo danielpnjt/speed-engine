@@ -1,0 +1,25 @@
+name: Speed-Engine Application
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Create .env file
+      run: |
+        - chmod +x ./env.sh
+
+    - name: Display .env (optional)
+      run: cat .env
+
+    - name: Run Application
+      run: |
+        docker-compose up -d
