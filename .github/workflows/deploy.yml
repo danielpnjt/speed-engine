@@ -36,17 +36,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Connect to GCP
+      # Set up Google Cloud CLI
       - name: Set up Google Cloud CLI
         uses: google-github-actions/setup-gcloud@v1
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
           service_account_key: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
 
-      # Authenticate with GCP
+      # Authenticate Docker with GCP Container Registry
       - name: Authenticate Docker with GCP
         run: |
-          echo "${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}" | docker login -u _json_key --password-stdin https://gcr.io
+          gcloud auth configure-docker gcr.io
 
       # Pull Docker image from Docker Hub
       - name: Pull Docker image
@@ -59,4 +59,5 @@ jobs:
           gcloud compute instances create-with-container my-container-instance \
             --zone us-central1-c \
             --container-image ${{ secrets.DOCKER_USERNAME }}/my-app:latest \
-            --tags=http-server,https-server
+            --tags=http-server,https-server \
+            --container-restart-policy always
