@@ -60,8 +60,4 @@ jobs:
       # Deploy Docker image on GCP
       - name: Deploy Docker container
         run: |
-          gcloud compute instances update-container instance-20241028-104014 \
-            --zone us-central1-c \
-            --container-image ${{ secrets.DOCKER_USERNAME }}/my-app:latest \
-            --tags=http-server,https-server \
-            --container-restart-policy always
+          gcloud compute instances update-container instance-20241028-104014 --zone us-central1-c --container-image ${{ secrets.DOCKER_USERNAME }}/my-app:latest --tags=http-server,https-server --container-restart-policy always
