@@ -36,14 +36,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Set up Google Cloud CLI
-      - name: Set up Google Cloud CLI
-        uses: google-github-actions/setup-gcloud@v1
+      # Authenticate with GCP
+      - name: Authenticate with GCP
+        uses: google-github-actions/auth@v1
         with:
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
-          service_account_key: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
 
-      # Authenticate Docker with GCP Container Registry
+      # Configure GCP project
+      - name: Configure GCP project
+        run: |
+          gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
+
+      # Authenticate Docker with GCP
       - name: Authenticate Docker with GCP
         run: |
           gcloud auth configure-docker gcr.io
