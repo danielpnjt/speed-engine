@@ -13,7 +13,6 @@ ENV TZ=Asia/Jakarta
 ENV ZONEINFO=/zoneinfo.zip
 
 COPY --from=build /app/bin/app /app
-COPY --from=build /app/.env /app/.env
 
 WORKDIR /app
 RUN ls -la /app
