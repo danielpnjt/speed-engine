@@ -14,6 +14,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # Make env.sh executable and create .env
+      - name: Set up environment variables
+        run: |
+          chmod +x ./speed-engine/deployment/production/env.sh
+          ./speed-engine/deployment/production/env.sh
+
       # Log in to Docker Hub
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
@@ -54,8 +60,8 @@ jobs:
             sudo apt update &&
             sudo apt install -y docker.io &&
             echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin &&
-            docker pull ${{ secrets.DOCKER_USERNAME }}/my-app:latest &&
-            docker stop my-app-container || true &&
-            docker rm my-app-container || true &&
-            docker run -d --restart always --name my-app-container -p 3021:3021 ${{ secrets.DOCKER_USERNAME }}/my-app:latest
+            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/my-app:latest &&
+            sudo docker stop my-app-container || true &&
+            sudo docker rm my-app-container || true &&
+            sudo docker run -d --restart always --name my-app-container -p 3021:3021 ${{ secrets.DOCKER_USERNAME }}/my-app:latest
           "
