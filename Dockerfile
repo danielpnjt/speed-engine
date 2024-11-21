@@ -1,18 +1,19 @@
-FROM golang:1.23.2 AS build
+FROM golang:1.23.2 AS builder
 
 WORKDIR /app
+
+COPY go.mod go.sum ./
+RUN go mod download
 COPY . .
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o main .
 
-RUN go mod tidy
-RUN ls -la /app
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/app
+FROM alpine:latest
 
-# FROM alpine:3.13
+WORKDIR /root/
 
-# COPY --from=build /usr/local/go/lib/time/zoneinfo.zip /
-# ENV TZ=Asia/Jakarta
-# ENV ZONEINFO=/zoneinfo.zip
-
-EXPOSE 3021
-ENTRYPOINT ["/app"]
-
+COPY --from=builder /app/main .
+COPY .env .
+RUN apk add --no-cache tzdata
+ENV TZ=Asia/Jakarta
+EXPOSE 8080
+ENTRYPOINT ["./main"]
